@@ -1,0 +1,35 @@
+/bin/bash: /data/users2/bthapaliya/anaconda-main/anaconda3/lib/libtinfo.so.6: no version information available (required by /bin/bash)
+arctrdgn002
+Traceback (most recent call last):
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/subavg/main_subavg.py", line 211, in <module>
+    dataset = load_data(args, args.dataset)
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/subavg/main_subavg.py", line 119, in load_data
+    class_num = load_partition_data_cifar10(args.data_dir, args.partition_method,
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar10/data_loader.py", line 209, in load_partition_data_cifar10
+    X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts = partition_data(
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar10/data_loader.py", line 77, in partition_data
+    X_train, y_train, X_test, y_test = load_cifar10_data(datadir)
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar10/data_loader.py", line 66, in load_cifar10_data
+    cifar10_train_ds = CIFAR10_truncated(datadir, train=True, download=True,transform=train_transform)
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar10/datasets.py", line 47, in __init__
+    self.data, self.target = self.__build_truncated_dataset__(cache_data_set)
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar10/datasets.py", line 52, in __build_truncated_dataset__
+    cifar_dataobj = CIFAR10(self.root, self.train, self.transform, self.target_transform, self.download)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/site-packages/torchvision/datasets/cifar.py", line 65, in __init__
+    self.download()
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/site-packages/torchvision/datasets/cifar.py", line 141, in download
+    download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/site-packages/torchvision/datasets/utils.py", line 446, in download_and_extract_archive
+    download_url(url, download_root, filename, md5)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/site-packages/torchvision/datasets/utils.py", line 135, in download_url
+    os.makedirs(root, exist_ok=True)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/os.py", line 215, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/os.py", line 215, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/os.py", line 215, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  [Previous line repeated 1 more time]
+  File "/data/users2/bthapaliya/anaconda-main/anaconda3/lib/python3.9/os.py", line 225, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: '/gdata'

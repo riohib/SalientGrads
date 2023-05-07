@@ -8,7 +8,7 @@ import time
 import pdb
 import numpy as np
 import torch
-
+from collections import OrderedDict
 #from fedml_api.standalone.sailentgrads import client
 from fedml_api.standalone.sailentgrads.client import Client
 from fedml_api.standalone.DisPFL.slim_util import model_difference
@@ -91,7 +91,7 @@ class SailentGradsAPI(object):
             client = self.client_list[clnt_idx]
             #Updates the mask, but not the case for SNIP
             #new_mask, w_local_mdl, updates_matrix[clnt_idx], training_flops, num_comm_params, tst_results = client.generate_global_mask_from_clients()
-            client_local_scores = client.generate_sailency_scores_from_each_client()
+            client_local_scores = client.generate_sailency_scores_from_each_client(itersnip_iteration = self.args.itersnip_iteration, stratified_sampling=self.args.stratified_sampling)
             all_client_snip_scores.append(client_local_scores)
         
 
@@ -265,6 +265,25 @@ class SailentGradsAPI(object):
             self.stat_info["final_masks"] =saved_masks
         return
 
+
+    def get_model_sps_for_weight(self, custom_weights):
+            nonzero = total = 0
+            for keys in custom_weights:
+                param = custom_weights[keys]
+                if 'mask' not in keys:
+                    tensor = param.detach().clone()
+                    # nz_count.append(torch.count_nonzero(tensor))
+                    nz_count = torch.count_nonzero(tensor).item()
+                    total_params = tensor.numel()
+                    nonzero += nz_count
+                    total += total_params
+            
+            tensor = None
+            # print(f"TOTAL: {total}")
+            abs_sps = 100 * (total-nonzero) / total
+            return abs_sps
+
+
     def train(self):
 
         params = self.model_trainer.get_trainable_params() #Model is same, so get parameters
@@ -282,10 +301,12 @@ class SailentGradsAPI(object):
         for clnt in range(self.args.client_num_in_total):  #For each client
             w_per_mdls.append(copy.deepcopy(w_global))
             updates_matrix.append(copy.deepcopy(w_global))
+            mask_sps = self.get_model_sps_for_weight(mask_pers_local[clnt])
 
             for name in mask_pers_local[clnt]:
-                w_per_mdls[clnt][name] = w_global[name] * mask_pers_local[clnt][name]
+                w_per_mdls[clnt][name] = w_global[name] #* mask_pers_local[clnt][name]
                 updates_matrix[clnt][name] = updates_matrix[clnt][name] - updates_matrix[clnt][name]
+        
 
         #----------------------------------------------------------------------------------------------
 
@@ -296,6 +317,7 @@ class SailentGradsAPI(object):
         for round_idx in range(self.args.comm_round):
             self.logger.info("################Communication round : {}".format(round_idx))
             w_locals = []
+            weight_locals=[]
             """
             for scalability: following the original FedAvg algorithm, we uniformly sample a fraction of clients in each round.
             Instead of changing the 'Client' instances, our implementation keeps the 'Client' instances and then updates their local dataset 
@@ -311,30 +333,58 @@ class SailentGradsAPI(object):
                 # update dataset
                 client = self.client_list[cur_clnt]
                 # update meta components in personal network
-                w_per,training_flops,num_comm_params = client.train(copy.deepcopy(w_per_mdls[cur_clnt]), round_idx, mask_pers_local[cur_clnt])
+                w_per,training_flops,num_comm_params = client.train(copy.deepcopy(w_global), round_idx, mask_pers_local[cur_clnt])
+                mask_sps = self.get_model_sps_for_weight(w_per)
                 w_per_mdls[cur_clnt] = copy.deepcopy(w_per)
                 # self.logger.info("local weights = " + str(w))
                 w_locals.append((client.get_sample_number(), copy.deepcopy(w_per)))
+                weight_locals.append(copy.deepcopy(w_per))
                 self.stat_info["sum_training_flops"] += training_flops
                 self.stat_info["sum_comm_params"] += num_comm_params
             # update global meta weights
             w_global = self._aggregate(w_locals)
+            #w_global = self.average_weights(weight_locals)
+            mask_sps = self.get_model_sps_for_weight(w_global)
+            #w_per_mdls = self._aggregate(w_locals)
+
+            
+
 
             self._test_on_all_clients(w_global, w_per_mdls, round_idx)
             # self._local_test_on_all_clients(w_global, round_idx)
         # self.record_avg_inference_flops(w_global)
 
         # 为了查看finetune的结果，在global avged model上再进行一轮训练
-        self.logger.info("################Communication round Last Fine Tune Round")
-        for clnt_idx in range(self.args.client_num_in_total):
-            self.logger.info('@@@@@@@@@@@@@@@@ Training Client: {}'.format(clnt_idx))
-            w_local_mdl = copy.deepcopy(w_global)
-            client = self.client_list[clnt_idx]
-            w_local_mdl, training_flops, num_comm_params = client.train(copy.deepcopy(w_local_mdl), -1, mask_pers_local[cur_clnt])
-            # 更新local model
-            w_per_mdls[clnt_idx] = copy.deepcopy(w_local_mdl)
+        # self.logger.info("################Communication round Last Fine Tune Round")
+        # for clnt_idx in range(self.args.client_num_in_total):
+        #     self.logger.info('@@@@@@@@@@@@@@@@ Training Client: {}'.format(clnt_idx))
+        #     w_local_mdl = copy.deepcopy(w_global)
+        #     client = self.client_list[clnt_idx]
+        #     w_local_mdl, training_flops, num_comm_params = client.train(copy.deepcopy(w_local_mdl), -1, mask_pers_local[cur_clnt])
+        #     # 更新local model
+        #     w_per_mdls[clnt_idx] = copy.deepcopy(w_local_mdl)
 
         self._test_on_all_clients(w_global, w_per_mdls, -1)
+    
+    def average_weights(self, weights_list):
+         #create an empty OrderedDict to store the averaged weights
+        averaged_weights = OrderedDict()
+
+        # iterate over the layers in the first OrderedDict to determine the size of each weight tensor
+        first_weights = weights_list[0]
+        for key in first_weights:
+            size = first_weights[key].size()
+            dtype = first_weights[key].dtype
+            averaged_weights[key] = torch.zeros(size, dtype=dtype)
+
+        # iterate over the weights in each layer and accumulate the sum
+        num_weights = len(weights_list)
+        for weights in weights_list:
+            for key in weights:
+                averaged_weights[key] += weights[key] / num_weights
+        
+        return averaged_weights
+
 
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
@@ -370,6 +420,7 @@ class SailentGradsAPI(object):
             client_indexes = np.array(np.where(active_ths_rnd==1)).squeeze()
             client_indexes = np.delete(client_indexes, int(np.where(client_indexes==cur_clnt)[0]))
         return client_indexes
+    
 
     def _aggregate_func(self, cur_idx, client_num_in_total, client_num_per_round, nei_indexs, w_per_mdls_lstrd, mask_pers, mask_pers_shared_lstrd):
         self.logger.info('Doing local aggregation!')

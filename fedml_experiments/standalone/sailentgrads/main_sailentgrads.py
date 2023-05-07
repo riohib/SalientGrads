@@ -40,7 +40,13 @@ def add_args(parser):
     parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
-    parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
+    # parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
+    #                     help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
+    #                          "one called 'n_cls' short for how many classes allocated for each client"
+    #                          "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
+
+
+    parser.add_argument('--partition_method', type=str, default='my_part', metavar='N',
                         help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
                              "one called 'n_cls' short for how many classes allocated for each client"
                              "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
@@ -65,16 +71,16 @@ def add_args(parser):
     parser.add_argument('--epochs', type=int, default=5, metavar='EP',
                         help='local training epochs for each client')
 
-    parser.add_argument('--client_num_in_total', type=int, default=100, metavar='NN',
+    parser.add_argument('--client_num_in_total', type=int, default=15, metavar='NN',
                         help='number of workers in a distributed cluster')
 
-    parser.add_argument('--frac', type=float, default=0.1, metavar='NN',
+    parser.add_argument('--frac', type=float, default=0.5, metavar='NN',
                         help='available communication fraction each round')
 
     parser.add_argument('--momentum', type=float, default=0, metavar='NN',
                         help='momentum')
 
-    parser.add_argument('--comm_round', type=int, default=500,
+    parser.add_argument('--comm_round', type=int, default=10,
                         help='total communication rounds')
 
     parser.add_argument('--frequency_of_the_test', type=int, default=1,
@@ -86,7 +92,7 @@ def add_args(parser):
     parser.add_argument('--ci', type=int, default=0,
                         help='CI')
 
-    parser.add_argument('--dense_ratio', type=float, default=0.5,
+    parser.add_argument('--dense_ratio', type=float, default=0.2,
                         help='local density ratio')
 
     parser.add_argument('--anneal_factor', type=float, default=0.5,
@@ -94,6 +100,8 @@ def add_args(parser):
 
     parser.add_argument("--seed", type=int, default=1024)
     parser.add_argument("--cs", type = str, default='v0')
+    parser.add_argument("--itersnip_iteration", type = int, default='1')
+    parser.add_argument("--stratified_sampling", default=False, action='store_true')
     parser.add_argument("--active", type=float,default=1.0)
 
     parser.add_argument("--public_portion", type=float, default=0)
@@ -148,7 +156,7 @@ def create_model(args, model_name,class_num):
     elif model_name == "cnn_cifar100":
         model = cnn_cifar100()
     elif model_name == "resnet18" and args.dataset != 'tiny':
-        model = original_resnet18(class_num=class_num)
+        model = customized_resnet18(class_num=class_num)
     elif model_name == "resnet18" and args.dataset == 'tiny':
         model = tiny_resnet18(class_num=class_num)
     elif model_name == "vgg11":
@@ -181,7 +189,7 @@ if __name__ == "__main__":
     if data_partition!="homo":
         data_partition+=str(args.partition_alpha)
     args.identity = "SailentGrads" + "-" + args.dataset + "-" + data_partition
-    args.identity+="-mdl" + args.model
+    args.identity+="-mdl" + args.model + "customized" +"lowbatch"
     args.identity+="-cs"+args.cs
 
     if args.save_masks:
@@ -214,6 +222,9 @@ if __name__ == "__main__":
     args.identity += "-dr" + str(args.dense_ratio)
     args.identity += "-active" + str(args.active)
     args.identity += '-seed' + str(args.seed)
+    args.identity += '-batchsize' + str(args.batch_size)
+    args.identity += '-iteration' + str(args.itersnip_iteration)
+    args.identity += '-stratified' + str(args.stratified_sampling)
 
     # cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
     # log_path = '/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/LOG/' + args.dataset + '/' + args.identity + '.log'

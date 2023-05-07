@@ -7,16 +7,21 @@ import pdb
 import numpy as np
 import torch
 
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("...")
+sys.path.append("....")
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL')
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api')
+sys.path.insert(0, os.path.abspath("/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/"))
 
-# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../")))
-sys.path.insert(0, os.path.abspath("/gdata/dairong/DisPFL/"))
 from fedml_api.data_preprocessing.cifar100.data_loader import load_partition_data_cifar100
 from fedml_api.model.cv.vgg import vgg16, vgg11
 from fedml_api.model.cv.cnn_cifar10 import cnn_cifar10, cnn_cifar100
 from fedml_api.standalone.DisPFL.dispfl_api import dispflAPI
 from fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
 from fedml_api.data_preprocessing.tiny_imagenet.data_loader import load_partition_data_tiny
-from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18
+from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18, original_resnet18
 from fedml_api.standalone.DisPFL.my_model_trainer import MyModelTrainer
 
 def add_args(parser):
@@ -30,7 +35,7 @@ def add_args(parser):
     parser.add_argument('--dataset', type=str, default='cifar10', metavar='N',
                         help='dataset used for training')
 
-    parser.add_argument('--data_dir', type=str, default='/gdata/dairong/FedSlim/data/',
+    parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
     parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
@@ -86,7 +91,7 @@ def add_args(parser):
                         help='anneal factor for pruning')
 
     parser.add_argument("--seed", type=int, default=1024)
-    parser.add_argument("--cs", type = str, default='v0')
+    parser.add_argument("--cs", type = str, default='random')
     parser.add_argument("--active", type=float,default=1.0)
 
     parser.add_argument("--public_portion", type=float, default=0)
@@ -171,7 +176,7 @@ if __name__ == "__main__":
     if data_partition!="homo":
         data_partition+=str(args.partition_alpha)
     args.identity = "DisPFL" + "-" + args.dataset + "-" + data_partition
-    args.identity+="-mdl" + args.model
+    args.identity+="-mdl" + args.model #+ "original"
     args.identity+="-cs"+args.cs
 
     if args.save_masks:
@@ -202,12 +207,16 @@ if __name__ == "__main__":
     args. client_num_per_round = int(args.client_num_in_total* args.frac)
     args.identity += "-neighbor" + str(args.client_num_per_round)
     args.identity += "-dr" + str(args.dense_ratio)
+    args.identity += '-batchsize' + str(args.batch_size)
     args.identity += "-active" + str(args.active)
     args.identity += '-seed' + str(args.seed)
 
     cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
-    log_path = '/gdata/dairong/DisPFL/fedml_experiments/standalone/DisPFL/LOG/' + args.dataset + '/' + args.identity + '.log'
-    logger = logger_config(log_path=log_path, logging_name=args.identity)
+    log_path = os.path.join(cur_dir, 'LOG/' + args.dataset + '/' + args.identity + '.log')
+    main_log_path = os.path.join('LOG/' + args.dataset)
+    if not os.path.exists(main_log_path):
+        os.makedirs(main_log_path)
+    logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)
 
 
     logger.info(args)

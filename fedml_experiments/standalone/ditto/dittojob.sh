@@ -6,7 +6,7 @@
 #SBATCH -p qTRDGPUM
 #SBATCH --gres=gpu:V100:1
 #SBATCH -t 03-00
-#SBATCH -J largeresnetfedavg
+#SBATCH -J dittocifar10
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out
 #SBATCH -A trends53c17
@@ -22,17 +22,18 @@ echo $HOSTNAME >&2
 
 source /data/users2/bthapaliya/anaconda-main/anaconda3/bin/activate 
 
-python main_fedavg.py --model 'resnet18' \
+python main_ditto.py --model 'resnet18' \
 --dataset 'cifar100' \
 --partition_method 'dir' \
---partition_alpha 0.2 \
+--partition_alpha 0.3 \
 --batch_size 128 \
 --lr 0.1 \
 --lr_decay 0.998 \
---epochs 5 \
---client_num_in_total 100 \
---frac 0.1 \
+--client_num_in_total 100 --frac 0.1 \
 --comm_round 500 \
---seed 2022
+--seed 2022 \
+--epochs 2 \
+--lamda 0.5 \
+--local_epochs 3
 
 sleep 30s

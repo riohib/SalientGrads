@@ -5,14 +5,21 @@ import random
 import sys
 import numpy as np
 import torch
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("...")
+sys.path.append("....")
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL')
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api')
+sys.path.insert(0, os.path.abspath("/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/"))
 
-sys.path.insert(0, os.path.abspath("/gdata/dairong/DisPFL/"))
+#sys.path.insert(0, os.path.abspath("/gdata/dairong/DisPFL/"))
 from fedml_api.model.cv.vgg import vgg11, vgg16
 from fedml_api.standalone.ditto.ditto_api import DittoAPI
 from fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
 from fedml_api.data_preprocessing.cifar100.data_loader import load_partition_data_cifar100
 from fedml_api.data_preprocessing.tiny_imagenet.data_loader import load_partition_data_tiny
-from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18
+from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18, original_resnet18
 from fedml_api.model.cv.cnn_cifar10 import cnn_cifar10, cnn_cifar100
 from fedml_api.standalone.ditto.my_model_trainer import MyModelTrainer
 
@@ -41,7 +48,7 @@ def add_args(parser):
     parser.add_argument('--momentum', type=float, default=0, metavar='N',
                         help='momentum')
 
-    parser.add_argument('--data_dir', type=str, default='/gdata/dairong/FedSlim/data/',
+    parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
     parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
@@ -160,16 +167,22 @@ if __name__ == "__main__":
     args.identity += "-mdl" + args.model
     args.identity += "-ge" + str(args.epochs)
     args.identity += "-le" + str(args.local_epochs)
+    args.identity += '-batchsize' + str(args.batch_size)
     args.identity += "-lambda" + str(args.lamda)
     args.identity += "-cm" + str(args.comm_round) + "-total_clnt" + str(args.client_num_in_total)
     args.identity += "-neighbor" + str(args.client_num_per_round)
     args.identity += '-seed' + str(args.seed)
     args. client_num_per_round = int(args.client_num_in_total* args.frac)
 
+
     cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
     log_path = os.path.join(cur_dir, 'LOG/' + args.dataset + '/' + args.identity + '.log')
-    logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log',logging_name=args.identity)
-    
+    main_log_path = os.path.join('LOG/' + args.dataset)
+    if not os.path.exists(main_log_path):
+        os.makedirs(main_log_path)
+    logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)
+
+
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) )
     logger.info(device)

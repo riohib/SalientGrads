@@ -198,6 +198,7 @@ class dispflAPI(object):
             # If one can communicate with all others and there is no bandwidth limit
             client_indexes = [client_index for client_index in range(client_num_in_total)]
             return client_indexes
+        cs = "random"
 
         if cs == "random":
             # Random selection of available clients

@@ -9,7 +9,13 @@ import numpy as np
 import torch
 
 
-sys.path.insert(0, os.path.abspath("/gdata/dairong/DisPFL/"))
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("...")
+sys.path.append("....")
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL')
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api')
+sys.path.insert(0, os.path.abspath("/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/"))
 from fedml_api.model.cv.vgg import vgg11, vgg16
 from fedml_api.model.cv.lenet5 import LeNet5
 from fedml_api.standalone.subavg.subavg_api import SubAvgAPI
@@ -19,7 +25,7 @@ from fedml_api.data_preprocessing.cifar100.data_loader import load_partition_dat
 # from fedml_api.data_preprocessing.EMNIST.data_loader import load_partition_data_emnist
 from fedml_api.standalone.subavg.my_model_trainer import MyModelTrainer as MyModelTrainerCLS, MyModelTrainer
 from fedml_api.data_preprocessing.tiny_imagenet.data_loader import load_partition_data_tiny
-from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18
+from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18, original_resnet18
 
 def logger_config(log_path, logging_name):
     logger = logging.getLogger(logging_name)
@@ -50,7 +56,7 @@ def add_args(parser):
     parser.add_argument('--momentum', type=float, default=0, metavar='N',
                         help='momentum')
 
-    parser.add_argument('--data_dir', type=str, default='/gdata/dairong/FedSlim/data/',
+    parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
     parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
@@ -171,7 +177,8 @@ if __name__ == "__main__":
     args.identity= "SubAVG"
     args.identity += data_partition
     
-    args.identity += "-mdl" + args.model
+    args.identity += "-mdl" + args.model #+"original"
+    args.identity += '-batchsize' + str(args.batch_size)
     args.identity += "-cm" + str(args.comm_round) + "-total_clnt" + str(args.client_num_in_total)
     args.identity += "-neighbor" + str(args.client_num_per_round)
     args.identity += '-seed' + str(args.seed)
@@ -187,9 +194,14 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(args.seed)
     torch.backends.cudnn.deterministic = True
 
+
     cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
     log_path = os.path.join(cur_dir, 'LOG/' + args.dataset + '/' + args.identity + '.log')
+    main_log_path = os.path.join('LOG/' + args.dataset)
+    if not os.path.exists(main_log_path):
+        os.makedirs(main_log_path)
     logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)
+
 
     logger.info(args)
     device = torch.device("cuda:" + str(args.gpu) )

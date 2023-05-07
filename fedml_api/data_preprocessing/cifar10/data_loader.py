@@ -149,7 +149,7 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
                 break
 
     elif partition == 'my_part':
-        n_shards = int(alpha)
+        n_shards = alpha * n_client
         n_client = n_nets
         n_cls = 10
 

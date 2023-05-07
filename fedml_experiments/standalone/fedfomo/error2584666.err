@@ -1,0 +1,10 @@
+/bin/bash: /data/users2/bthapaliya/anaconda-main/anaconda3/lib/libtinfo.so.6: no version information available (required by /bin/bash)
+arctrdgn002
+Traceback (most recent call last):
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/fedfomo/main_fedfomo.py", line 210, in <module>
+    fedfomoAPI.train()
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/fedfomo/fedfomo_api.py", line 95, in train
+    w_local_mdl = self._aggregate_func(clnt_idx, self.args.client_num_in_total,
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/fedfomo/fedfomo_api.py", line 213, in _aggregate_func
+    w_tmp[k] += (w_local_mdl[k] - w_per_mdls_lstrd[cur_clnt][k]) * weight_tmp[clnt] / w_easy
+RuntimeError: result type Float can't be cast to the desired output type Long

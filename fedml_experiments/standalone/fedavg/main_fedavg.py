@@ -19,7 +19,7 @@ from fedml_api.model.cv.vgg import vgg11
 from fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data_cifar10
 from fedml_api.data_preprocessing.cifar100.data_loader import load_partition_data_cifar100
 from fedml_api.data_preprocessing.tiny_imagenet.data_loader import load_partition_data_tiny
-from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18
+from fedml_api.model.cv.resnet import  customized_resnet18, tiny_resnet18, original_resnet18
 from fedml_api.model.cv.cnn_cifar10 import cnn_cifar10, cnn_cifar100
 from fedml_api.standalone.fedavg.fedavg_api import FedAvgAPI
 from fedml_api.standalone.fedavg.my_model_trainer import MyModelTrainer
@@ -161,7 +161,8 @@ if __name__ == "__main__":
         data_partition += str(args.partition_alpha)
     args.identity = "fedavg"  + "-"+data_partition
     args. client_num_per_round = int(args.client_num_in_total* args.frac)
-    args.identity += "-mdl" + args.model
+    args.identity += "-mdl" + args.model #+"original"
+    args.identity += '-batchsize' + str(args.batch_size)
     args.identity += "-cm" + str(args.comm_round) + "-total_clnt" + str(args.client_num_in_total)
     args.identity += "-neighbor" + str(args.client_num_per_round)
     args.identity += '-seed' + str(args.seed)

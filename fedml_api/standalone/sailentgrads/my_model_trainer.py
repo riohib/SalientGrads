@@ -139,6 +139,22 @@ class MyModelTrainer(ModelTrainer):
         for name, param in self.model.named_parameters():
             dict[name] = param
         return dict
+    
+    def get_model_sps(self):
+        nonzero = total = 0
+        for name, param in self.model.named_parameters():
+            if 'mask' not in name:
+                tensor = param.detach().clone()
+                # nz_count.append(torch.count_nonzero(tensor))
+                nz_count = torch.count_nonzero(tensor).item()
+                total_params = tensor.numel()
+                nonzero += nz_count
+                total += total_params
+        
+        tensor = None
+        # print(f"TOTAL: {total}")
+        abs_sps = 100 * (total-nonzero) / total
+        return abs_sps
 
     
     def get_snip_scores(self, mini_batch, re_init=False):
@@ -164,7 +180,7 @@ class MyModelTrainer(ModelTrainer):
                     nn.init.xavier_normal_(layer.weight)
                 layer.weight.requires_grad = False
 
-            # Override the forward methods:
+            # # Override the forward methods:
             if isinstance(layer, nn.Conv2d):
                 layer.forward = types.MethodType(snip_forward_conv2d, layer)
 

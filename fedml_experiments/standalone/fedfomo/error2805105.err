@@ -1,0 +1,10 @@
+/bin/bash: /data/users2/bthapaliya/anaconda-main/anaconda3/lib/libtinfo.so.6: no version information available (required by /bin/bash)
+arctrdgn001
+Traceback (most recent call last):
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/fedfomo/main_fedfomo.py", line 211, in <module>
+    fedfomoAPI.train()
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/fedfomo/fedfomo_api.py", line 118, in train
+    self.record_information()
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/fedfomo/fedfomo_api.py", line 328, in record_information
+    output = open(path, 'wb')
+FileNotFoundError: [Errno 2] No such file or directory: '../../results/cifar10/fedfomo-dir0.3-mdlresnet18-cm500-total_clnt100-batchsize128-neighbor10-seed2022'
