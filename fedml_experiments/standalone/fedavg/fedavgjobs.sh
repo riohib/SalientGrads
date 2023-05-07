@@ -26,7 +26,7 @@ python main_fedavg.py --model 'resnet18' \
 --dataset 'cifar100' \
 --partition_method 'dir' \
 --partition_alpha 0.2 \
---batch_size 128 \
+--batch_size 16 \
 --lr 0.1 \
 --lr_decay 0.998 \
 --epochs 5 \

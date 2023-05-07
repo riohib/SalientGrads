@@ -2,11 +2,12 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 5
-#SBATCH --mem=44g
+#SBATCH --mem=63g
 #SBATCH -p qTRDGPUM
+#SBATCH -w arctrddgx001
 #SBATCH --gres=gpu:V100:1
 #SBATCH -t 03-00
-#SBATCH -J dpsgdcifar100
+#SBATCH -J partdpsgdcifar100
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out
 #SBATCH -A trends53c17
@@ -23,8 +24,8 @@ echo $HOSTNAME >&2
 source /data/users2/bthapaliya/anaconda-main/anaconda3/bin/activate 
 
 python main_dpsgd.py --model 'resnet18' \
---dataset 'cifar100' \
---partition_method 'dir' \
+--dataset 'cifar10' \
+--partition_method 'my_part' \
 --partition_alpha 0.2 \
 --batch_size 16 \
 --lr 0.1 \
@@ -35,5 +36,4 @@ python main_dpsgd.py --model 'resnet18' \
 --seed 2022 \
 --cs 'random' \
 --type "epoch"
-
 sleep 30s

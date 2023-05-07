@@ -149,8 +149,8 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
                 break
 
     elif partition == 'my_part':
-        n_shards = alpha * n_client
         n_client = n_nets
+        n_shards = alpha 
         n_cls = 10
 
         n_data_per_clnt = len(y_train) / n_client
@@ -159,7 +159,7 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
         cls_priors = np.zeros(shape=(n_client, n_cls))
 
         # default partition method with Dirichlet=0.3
-        cls_priors_tmp = np.random.dirichlet(alpha=[0.3] * n_cls, size = int(n_shards))
+        cls_priors_tmp = np.random.dirichlet(alpha=[0.3] * n_cls, size = int(n_shards * n_client))
 
         for i in range(n_client):
             cls_priors[i] = cls_priors_tmp[int(i / int(n_client / n_shards))]
