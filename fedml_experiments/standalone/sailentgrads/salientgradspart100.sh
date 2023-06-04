@@ -3,13 +3,13 @@
 #SBATCH -n 1
 #SBATCH -c 5
 #SBATCH --mem=44g
-#SBATCH -p qTRDGPUH,qTRDGPUM,qTRDGPU
+#SBATCH --partition=qTRDGPUH
 #SBATCH --gres=gpu:V100:1
-#SBATCH -t 03-00
-#SBATCH -J partsailentgrads100
-#SBATCH -e error%A.err
-#SBATCH -o out%A.out
-#SBATCH -A trends53c17
+#SBATCH -t 01-06
+#SBATCH -e error-1%A.err
+#SBATCH -o out-1%A.out
+#SBATCH --account=psy53c17
+#SBATCH -J rohib
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bthapaliya1@student.gsu.edu
 #SBATCH --oversubscribe

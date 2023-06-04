@@ -3,9 +3,9 @@
 #SBATCH -n 1
 #SBATCH -c 5
 #SBATCH --mem=44g
-#SBATCH -p qTRDGPUM
+#SBATCH -p qTRDGPUH,qTRDGPUM
 #SBATCH --gres=gpu:V100:1
-#SBATCH -t 03-00
+#SBATCH -t 01-11
 #SBATCH -J partfedavg100
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out

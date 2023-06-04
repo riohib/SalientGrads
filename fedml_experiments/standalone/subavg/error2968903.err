@@ -1,0 +1,4 @@
+arctrddgx001
+/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/subavg/subavg_api.py:134: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at  ../aten/src/ATen/native/IndexingUtils.h:27.)
+  w_server[name][ind]= avg[ind]
+slurmstepd: error: *** JOB 2968903 ON arctrddgx001 CANCELLED AT 2023-05-09T13:43:14 DUE TO PREEMPTION ***

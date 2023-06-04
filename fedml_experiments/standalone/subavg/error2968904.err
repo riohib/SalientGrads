@@ -1,0 +1,11 @@
+arctrddgx001
+Traceback (most recent call last):
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/subavg/main_subavg.py", line 212, in <module>
+    dataset = load_data(args, args.dataset)
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/subavg/main_subavg.py", line 126, in load_data
+    class_num = load_partition_data_cifar100(args.data_dir, args.partition_method,
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar100/data_loader.py", line 218, in load_partition_data_cifar100
+    X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts = partition_data(
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/data_preprocessing/cifar100/data_loader.py", line 169, in partition_data
+    cls_priors[i] = cls_priors_tmp[int(i / n_shards)]
+IndexError: index 0 is out of bounds for axis 0 with size 0

@@ -1,2 +1,3 @@
 /bin/bash: /data/users2/bthapaliya/anaconda-main/anaconda3/lib/libtinfo.so.6: no version information available (required by /bin/bash)
-arctrdgn002
+arctrddgx001
+slurmstepd: error: *** JOB 2937433 ON arctrddgx001 CANCELLED AT 2023-05-08T16:28:32 DUE TO PREEMPTION ***

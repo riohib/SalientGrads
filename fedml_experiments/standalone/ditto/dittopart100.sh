@@ -5,11 +5,11 @@
 #SBATCH --mem=44g
 #SBATCH -p qTRDGPUM
 #SBATCH --gres=gpu:V100:1
-#SBATCH -t 03-00
-#SBATCH -J partdittocifar100
+#SBATCH -t 01-11
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out
-#SBATCH -A trends53c17
+#SBATCH --account=trends53c17
+#SBATCH -J dittopart100
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bthapaliya1@student.gsu.edu
 #SBATCH --oversubscribe

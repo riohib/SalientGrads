@@ -13,6 +13,7 @@ from collections import OrderedDict
 from fedml_api.standalone.sailentgrads.client import Client
 from fedml_api.standalone.DisPFL.slim_util import model_difference
 from fedml_api.standalone.DisPFL.slim_util import hamming_distance
+from fedml_api.standalone.sailentgrads.snip import get_mask_from_grads, get_mean_snip_scores, get_snip_scores
 
 class SailentGradsAPI(object):
     def __init__(self, dataset, device, args, model_trainer, logger):
@@ -43,46 +44,6 @@ class SailentGradsAPI(object):
             self.client_list.append(c)
         self.logger.info("############setup_clients (END)#############")
     
-    # def generate_global_mask_snip(self):
-    #     sparsity_ratio = self.args.dense_ratio
-    #     all_client_snip_masks=[]
-
-    #     #Get Sailency Scores for all clients
-    #     for round_idx in range(self.args.comm_round):
-    #         self.logger.info("################ Masks generation round : {}".format(round_idx))
-
-    #         active_ths_rnd = np.random.choice([0, 1], size = self.args.client_num_in_total, p = [1.0 - self.args.active, self.args.active])
-            
-    #         #w_per_mdls_lstrd = copy.deepcopy(w_per_mdls)
-    #         #mask_pers_shared_lstrd = copy.deepcopy(mask_pers_shared)
-
-    #         tst_results_ths_round = []
-    #         final_tst_results_ths_round = []
-    #         for clnt_idx in range(self.args.client_num_in_total):
-    #             client = self.client_list[clnt_idx]
-
-    #             if active_ths_rnd[clnt_idx] == 0:
-    #                 self.logger.info('@@@@@@@@@@@@@@@@ Client Drop this round CM({}) with spasity : {}'.format(round_idx, clnt_idx))
-    #             #Updates the mask, but not the case for SNIP
-    #             #new_mask, w_local_mdl, updates_matrix[clnt_idx], training_flops, num_comm_params, tst_results = client.generate_global_mask_from_clients()
-    #             with torch.no_grad():
-    #                 client_local_mask = client.generate_local_mask_from_each_client()
-    #                 all_client_snip_masks.append(client_local_mask)
-        
-
-    #     self.logger.info("@@@@@Aggregare the local masks@@@@@@@@@@@@@@@@@@@")
-    #     #Aggregate the masks
-    #     averaged_scores = self.model_trainer.get_mean_snip_scores(all_client_snip_masks)
-    #     params = self.model_trainer.get_trainable_params()
-        
-    #     #Generate the final mask
-    #     keep_mask, keep_layers, final_weight_mask = self.model_trainer.get_mask_from_grads(averaged_scores, sparsity_ratio, params)
-
-
-                
-    #     return final_weight_mask
-    
-
     def generate_global_mask_snip(self):
         sparsity_ratio = self.args.dense_ratio
         all_client_snip_scores=[]
@@ -97,175 +58,13 @@ class SailentGradsAPI(object):
 
         self.logger.info("@@@@@Aggregate the local masks@@@@@@@@@@@@@@@@@@@")
         #Aggregate the masks
-        averaged_scores = self.model_trainer.get_mean_snip_scores(all_client_snip_scores)
+        averaged_scores = get_mean_snip_scores(all_client_snip_scores)
         params = self.model_trainer.get_trainable_params()
         
         #Generate the final mask
-        keep_mask, keep_layers, final_weight_mask = self.model_trainer.get_mask_from_grads(averaged_scores, sparsity_ratio, params)
-
-
-                
+        keep_mask, keep_layers, final_weight_mask = get_mask_from_grads(self.model_trainer, averaged_scores, sparsity_ratio, params)
         return final_weight_mask
     
-
-   
-
-    def train_old(self):
-
-        # for first initialization, all the weights and the masks are the same
-        # 在加入decentralized training时，所有client公用一个personalized mask和一个global model
-        # different_initial 控制初始的client personalized mask是否是相同的，默认是相同的 即different_initial=False
-        # masks = self.model_trainer.init_masks()
-        params = self.model_trainer.get_trainable_params() #Model is same, so get parameters
-
-        w_spa = [self.args.dense_ratio for i in range(self.args.client_num_in_total)] #Set if sparsity is different for clients
-
-        
-        if self.args.uniform:
-            sparsities = self.model_trainer.calculate_sparsities(params,distribution="uniform", sparse = self.args.dense_ratio)
-        else:
-            sparsities = self.model_trainer.calculate_sparsities(params,sparse = self.args.dense_ratio)
-        
-        if self.args.snip_mask:
-            temp = self.generate_global_mask_snip()
-            mask_pers_local = [copy.deepcopy(temp) for i in range(self.args.client_num_in_total)]
-        else:
-            if not self.args.different_initial: #Same mask to all the clients
-                temp = self.model_trainer.init_masks(params, sparsities)
-                mask_pers_local = [copy.deepcopy(temp) for i in range(self.args.client_num_in_total)]
-
-            elif not self.args.diff_spa: #Different sparsity
-                mask_pers_local = [copy.deepcopy(self.model_trainer.init_masks(params, sparsities)) for i in range(self.args.client_num_in_total)]
-            else:
-                #Not needed, same sparsity for all clients
-                divide = 5
-                p_divide = [0.2, 0.4, 0.6, 0.8, 1.0]
-                mask_pers_local = []
-                for i in range(self.args.client_num_in_total):
-                    sparsities = self.model_trainer.calculate_sparsities(params, sparse = p_divide[i % divide])
-                    temp = self.model_trainer.init_masks(params, sparsities)
-                    mask_pers_local.append(temp)
-                    w_spa[i] = p_divide[i % divide]
-        
-        w_global = self.model_trainer.get_model_params() #Make a copy of model parameters
-        w_per_mdls = []  #To store masked model parameters
-        updates_matrix = []  # To store masked model updates
-        
-        for clnt in range(self.args.client_num_in_total):  #For each client
-            w_per_mdls.append(copy.deepcopy(w_global))
-            updates_matrix.append(copy.deepcopy(w_global))
-
-            for name in mask_pers_local[clnt]:
-                w_per_mdls[clnt][name] = w_global[name] * mask_pers_local[clnt][name]
-                updates_matrix[clnt][name] = updates_matrix[clnt][name] - updates_matrix[clnt][name]
-
-        
-        w_per_globals = [copy.deepcopy(w_global) for i in range(self.args.client_num_in_total)]
-
-        
-        mask_pers_shared = copy.deepcopy(mask_pers_local)
-        
-        dist_locals = np.zeros(shape=(self.args.client_num_in_total, self.args.client_num_in_total))
-
-        #---------------------------------------------------------------------------
-
-        for round_idx in range(self.args.comm_round):
-            self.logger.info("################Communication round : {}".format(round_idx))
-
-            active_ths_rnd = np.random.choice([0, 1], size = self.args.client_num_in_total, p = [1.0 - self.args.active, self.args.active])
-            # 更新communication round时的所有personalized model
-            w_per_mdls_lstrd = copy.deepcopy(w_per_mdls)
-            mask_pers_shared_lstrd = copy.deepcopy(mask_pers_shared)
-
-            # 在每一个communication rounds需要进行每个client的local training
-            tst_results_ths_round = []
-            final_tst_results_ths_round = []
-            for clnt_idx in range(self.args.client_num_in_total):
-                if active_ths_rnd[clnt_idx] == 0:
-                    self.logger.info('@@@@@@@@@@@@@@@@ Client Drop this round CM({}) with spasity {}: {}'.format(round_idx, w_spa[clnt_idx], clnt_idx))
-
-                self.logger.info('@@@@@@@@@@@@@@@@ Training Client CM({}) with spasity {}: {}'.format(round_idx, w_spa[clnt_idx], clnt_idx))
-                # 记录当前mask变化了多少
-                dist_locals[clnt_idx][clnt_idx], total_dis = hamming_distance(mask_pers_shared_lstrd[clnt_idx], mask_pers_local[clnt_idx])
-                self.logger.info("local mask changes: {} / {}".format(dist_locals[clnt_idx][clnt_idx], total_dis))
-                if active_ths_rnd[clnt_idx] == 0:
-                    nei_indexs = np.array([])
-                else:
-                    nei_indexs = self._benefit_choose(round_idx, clnt_idx, self.args.client_num_in_total,
-                                                  self.args.client_num_per_round, dist_locals[clnt_idx], total_dis, self.args.cs, active_ths_rnd)
-                
-
-                if self.args.client_num_in_total != self.args.client_num_per_round:
-                    nei_indexs = np.append(nei_indexs, clnt_idx)
-
-                nei_indexs = np.sort(nei_indexs)
-
-
-                # # 更新dist_locals 矩阵
-                # for tmp_idx in nei_indexs:
-                #     if tmp_idx != clnt_idx:
-                #         dist_locals[clnt_idx][tmp_idx],_ = hamming_distance(mask_pers_local[clnt_idx], mask_pers_shared_lstrd[tmp_idx])
-
-                if self.args.cs!="full":
-                    self.logger.info("choose client_indexes: {}, accoring to {}".format(str(nei_indexs), self.args.cs))
-                else:
-                    self.logger.info("choose client_indexes: {}, accoring to {}".format(str(nei_indexs), self.args.cs))
-                if active_ths_rnd[clnt_idx] != 0:
-                    nei_distances = [dist_locals[clnt_idx][i] for i in nei_indexs]
-                    self.logger.info("choose mask diff: " + str(nei_distances))
-
-                # # Update each client's local model and the so-called consensus model
-                # if active_ths_rnd[clnt_idx] == 1:
-                #     w_local_mdl, w_per_globals[clnt_idx] = self._aggregate_func(clnt_idx, self.args.client_num_in_total, self.args.client_num_per_round, nei_indexs,
-                #                     w_per_mdls_lstrd, mask_pers_local, mask_pers_shared_lstrd)
-                # else:
-                #     w_local_mdl, w_per_globals[clnt_idx] = copy.deepcopy(w_per_mdls_lstrd[clnt_idx]), copy.deepcopy(w_per_mdls_lstrd[clnt_idx])
-
-                # # 聚合好模型后，更新shared mask
-                # mask_pers_shared[clnt_idx] = copy.deepcopy(mask_pers_local[clnt_idx])
-
-                # # 设置client进行local training
-                client = self.client_list[clnt_idx]
-
-                test_local_metrics = client.local_test(w_local_mdl, True)
-                final_tst_results_ths_round.append(test_local_metrics)
-
-                # #Updates the mask, but not the case for SNIp
-
-                new_mask, w_local_mdl, updates_matrix[clnt_idx], training_flops, num_comm_params, tst_results = client.train(copy.deepcopy(w_local_mdl), copy.deepcopy(mask_pers_local[clnt_idx]), round_idx)
-                tst_results_ths_round.append(tst_results)
-
-                # # 更新local model和local mask
-                # w_per_mdls[clnt_idx] = copy.deepcopy(w_local_mdl)
-                # mask_pers_local[clnt_idx] = copy.deepcopy(new_mask)
-
-                # 更新w_per_globals w_per_globals里存储的是每个client的训练完的最后状态(dense models)
-                for key in w_per_globals[clnt_idx]:
-                    w_per_globals[clnt_idx][key] += updates_matrix[clnt_idx][key]
-
-                self.stat_info["sum_training_flops"] += training_flops
-                self.stat_info["sum_comm_params"] += num_comm_params
-
-            self._local_test_on_all_clients(tst_results_ths_round, round_idx)
-            self._local_test_on_all_clients_new_mask(final_tst_results_ths_round, round_idx)
-
-        for index in range(self.args.client_num_in_total):
-            tmp_dist = []
-            for clnt in range(self.args.client_num_in_total):
-                tmp, _ = hamming_distance(mask_pers_local[index], mask_pers_local[clnt])
-                tmp_dist.append(tmp.item())
-            self.stat_info["mask_dis_matrix"].append(tmp_dist)
-
-        ## uncomment this if u like to save the final mask; Note masks for Resnet could be large, up to 1GB for 100 clients
-        if self.args.save_masks:
-            saved_masks = [{} for index in range(len(mask_pers_local))]
-            for index, mask in enumerate(mask_pers_local):
-                for name in mask:
-                        saved_masks[index][name] = mask[name].data.bool()
-            self.stat_info["final_masks"] =saved_masks
-        return
-
-
     def get_model_sps_for_weight(self, custom_weights):
             nonzero = total = 0
             for keys in custom_weights:
@@ -296,22 +95,11 @@ class SailentGradsAPI(object):
         
         w_global = self.model_trainer.get_model_params() #Make a copy of model parameters
         w_per_mdls = []  #To store masked model parameters
-        updates_matrix = []  # To store masked model updates
         
         for clnt in range(self.args.client_num_in_total):  #For each client
             w_per_mdls.append(copy.deepcopy(w_global))
-            updates_matrix.append(copy.deepcopy(w_global))
-            mask_sps = self.get_model_sps_for_weight(mask_pers_local[clnt])
-
             for name in mask_pers_local[clnt]:
                 w_per_mdls[clnt][name] = w_global[name] #* mask_pers_local[clnt][name]
-                updates_matrix[clnt][name] = updates_matrix[clnt][name] - updates_matrix[clnt][name]
-        
-
-        #----------------------------------------------------------------------------------------------
-
-        # w_per_globals = [copy.deepcopy(w_global) for i in range(self.args.client_num_in_total)]
-        # mask_pers_shared = copy.deepcopy(mask_pers_local)
         
 
         for round_idx in range(self.args.comm_round):
@@ -343,48 +131,14 @@ class SailentGradsAPI(object):
                 self.stat_info["sum_comm_params"] += num_comm_params
             # update global meta weights
             w_global = self._aggregate(w_locals)
-            #w_global = self.average_weights(weight_locals)
+            #Just testing the sparsity
             mask_sps = self.get_model_sps_for_weight(w_global)
-            #w_per_mdls = self._aggregate(w_locals)
-
-            
-
-
             self._test_on_all_clients(w_global, w_per_mdls, round_idx)
-            # self._local_test_on_all_clients(w_global, round_idx)
-        # self.record_avg_inference_flops(w_global)
-
-        # 为了查看finetune的结果，在global avged model上再进行一轮训练
-        # self.logger.info("################Communication round Last Fine Tune Round")
-        # for clnt_idx in range(self.args.client_num_in_total):
-        #     self.logger.info('@@@@@@@@@@@@@@@@ Training Client: {}'.format(clnt_idx))
-        #     w_local_mdl = copy.deepcopy(w_global)
-        #     client = self.client_list[clnt_idx]
-        #     w_local_mdl, training_flops, num_comm_params = client.train(copy.deepcopy(w_local_mdl), -1, mask_pers_local[cur_clnt])
-        #     # 更新local model
-        #     w_per_mdls[clnt_idx] = copy.deepcopy(w_local_mdl)
 
         self._test_on_all_clients(w_global, w_per_mdls, -1)
-    
-    def average_weights(self, weights_list):
-         #create an empty OrderedDict to store the averaged weights
-        averaged_weights = OrderedDict()
 
-        # iterate over the layers in the first OrderedDict to determine the size of each weight tensor
-        first_weights = weights_list[0]
-        for key in first_weights:
-            size = first_weights[key].size()
-            dtype = first_weights[key].dtype
-            averaged_weights[key] = torch.zeros(size, dtype=dtype)
 
-        # iterate over the weights in each layer and accumulate the sum
-        num_weights = len(weights_list)
-        for weights in weights_list:
-            for key in weights:
-                averaged_weights[key] += weights[key] / num_weights
-        
-        return averaged_weights
-
+    #Sampling the client
 
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
@@ -395,6 +149,9 @@ class SailentGradsAPI(object):
             client_indexes = np.random.choice(range(client_num_in_total), num_clients, replace=False)
         self.logger.info("client_indexes = %s" % str(client_indexes))
         return client_indexes
+    
+
+    #Choosing the type of topology
 
     def _benefit_choose(self, round_idx, cur_clnt, client_num_in_total, client_num_per_round, dist_local, total_dist, cs = False, active_ths_rnd = None):
         if client_num_in_total == client_num_per_round:
@@ -422,25 +179,26 @@ class SailentGradsAPI(object):
         return client_indexes
     
 
-    def _aggregate_func(self, cur_idx, client_num_in_total, client_num_per_round, nei_indexs, w_per_mdls_lstrd, mask_pers, mask_pers_shared_lstrd):
-        self.logger.info('Doing local aggregation!')
-        # Use the received models to infer the consensus model
-        count_mask = copy.deepcopy(mask_pers_shared_lstrd[cur_idx])
-        for k in count_mask.keys():
-            count_mask[k] = count_mask[k] - count_mask[k]
-            for clnt in nei_indexs:
-                count_mask[k] += mask_pers_shared_lstrd[clnt][k]
-        for k in count_mask.keys():
-            count_mask[k] = np.divide(1, count_mask[k], out = np.zeros_like(count_mask[k]), where = count_mask[k] != 0)
-        w_tmp = copy.deepcopy(w_per_mdls_lstrd[cur_idx])
-        for k in w_tmp.keys():
-            w_tmp[k] = w_tmp[k] - w_tmp[k]
-            for clnt in nei_indexs:
-                w_tmp[k] += torch.from_numpy(count_mask[k]) * w_per_mdls_lstrd[clnt][k]
-        w_p_g = copy.deepcopy(w_tmp)
-        for name in mask_pers[cur_idx]:
-            w_tmp[name] = w_tmp[name] * mask_pers[cur_idx][name]
-        return w_tmp, w_p_g
+    #This is a custom aggregate implementation for sanity check - No need to use now
+    def average_weights(self, weights_list):
+         #create an empty OrderedDict to store the averaged weights
+        averaged_weights = OrderedDict()
+
+        # iterate over the layers in the first OrderedDict to determine the size of each weight tensor
+        first_weights = weights_list[0]
+        for key in first_weights:
+            size = first_weights[key].size()
+            dtype = first_weights[key].dtype
+            averaged_weights[key] = torch.zeros(size, dtype=dtype)
+
+        # iterate over the weights in each layer and accumulate the sum
+        num_weights = len(weights_list)
+        for weights in weights_list:
+            for key in weights:
+                averaged_weights[key] += weights[key] / num_weights
+        
+        return averaged_weights
+    
     
     def _aggregate(self, w_locals):
         training_num = 0
@@ -459,6 +217,8 @@ class SailentGradsAPI(object):
                     w_global[k] += local_model_params[k] * w
         return w_global
 
+
+    #Global test on all client and local test on all clients
     def _test_on_all_clients(self, w_global, w_per_mdls, round_idx):
 
         self.logger.info("################global_test_on_all_clients : {}".format(round_idx))
@@ -515,6 +275,8 @@ class SailentGradsAPI(object):
         self.stat_info["person_test_acc"].append(p_test_acc)
         self.logger.info(stats)
 
+
+    #Individual local tests
     def _local_test_on_all_clients(self, tst_results_ths_round, round_idx):
             self.logger.info("################local_test_on_all_clients after local training in communication round: {}".format(round_idx))
             test_metrics = {
@@ -544,38 +306,7 @@ class SailentGradsAPI(object):
             self.logger.info(stats)
             self.stat_info["old_mask_test_acc"].append(test_acc)
 
-    def _local_test_on_all_clients_new_mask(self, tst_results_ths_round, round_idx):
-        self.logger.info("################local_test_on_all_clients before local training in communication round: {}".format(round_idx))
-        test_metrics = {
-            'num_samples': [],
-            'num_correct': [],
-            'losses': []
-        }
-        for client_idx in range(self.args.client_num_in_total):
-
-            # test data
-            test_metrics['num_samples'].append(copy.deepcopy(tst_results_ths_round[client_idx]['test_total']))
-            test_metrics['num_correct'].append(copy.deepcopy(tst_results_ths_round[client_idx]['test_correct']))
-            test_metrics['losses'].append(copy.deepcopy(tst_results_ths_round[client_idx]['test_loss']))
-
-            """
-            Note: CI environment is CPU-based computing. 
-            The training speed for RNN training is to slow in this setting, so we only test a client to make sure there is no programming error.
-            """
-            if self.args.ci == 1:
-                break
-
-        # # test on test dataset
-        test_acc = sum([test_metrics['num_correct'][i] / test_metrics['num_samples'][i] for i in
-                        range(self.args.client_num_in_total)]) / self.args.client_num_in_total
-        test_loss = sum([np.array(test_metrics['losses'][i]) / np.array(test_metrics['num_samples'][i]) for i in
-                         range(self.args.client_num_in_total)]) / self.args.client_num_in_total
-
-        stats = {'test_acc': test_acc, 'test_loss': test_loss}
-
-        self.logger.info(stats)
-        self.stat_info["new_mask_test_acc"].append(test_acc)
-
+    #Calculating the FLOPS
     def record_avg_inference_flops(self, w_global, mask_pers=None):
         inference_flops=[]
         for client_idx in range(self.args.client_num_in_total):

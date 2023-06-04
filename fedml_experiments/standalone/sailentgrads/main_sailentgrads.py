@@ -40,16 +40,16 @@ def add_args(parser):
     parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
-    # parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
-    #                     help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
-    #                          "one called 'n_cls' short for how many classes allocated for each client"
-    #                          "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
-
-
-    parser.add_argument('--partition_method', type=str, default='my_part', metavar='N',
+    parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
                         help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
                              "one called 'n_cls' short for how many classes allocated for each client"
                              "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
+
+
+    # parser.add_argument('--partition_method', type=str, default='my_part', metavar='N',
+    #                     help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
+    #                          "one called 'n_cls' short for how many classes allocated for each client"
+    #                          "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
 
     parser.add_argument('--partition_alpha', type=float, default=0.3, metavar='PA',
                         help='available parameters for data partition method')
