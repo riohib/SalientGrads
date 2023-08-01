@@ -1,3 +1,4 @@
+# %%
 import argparse
 import logging
 import os
@@ -11,9 +12,8 @@ sys.path.append("..")
 sys.path.append("...")
 sys.path.append("....")
 #from fedml_api.model.cv.lenet5 import LeNet5
-# sys.path.append('/data/users2/rohib/DistributedFLExperiments/DistributedFL')
-sys.path.append("/data/users2/rohib/github-repos/SalientGrads")
-sys.path.append('/data/users2/rohib/github-repos/SalientGrads/fedml_api')
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL')
+sys.path.append('/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api')
 
 sys.path.insert(0, os.path.abspath("/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/"))
 
@@ -26,6 +26,8 @@ from fedml_api.data_preprocessing.cifar10.data_loader import load_partition_data
 from fedml_api.data_preprocessing.tiny_imagenet.data_loader import load_partition_data_tiny
 from fedml_api.model.cv.resnet import  customized_resnet18, original_resnet18, tiny_resnet18
 from fedml_api.standalone.sailentgrads.my_model_trainer import MyModelTrainer
+
+# %%
 
 def add_args(parser):
     """
@@ -122,6 +124,7 @@ def add_args(parser):
     parser.add_argument("--snip_mask", default=True, action='store_true')
     return parser
 
+# %%
 
 def load_data(args, dataset_name):
     if dataset_name == "cifar10":
@@ -266,4 +269,6 @@ if __name__ == "__main__":
     model_trainer = custom_model_trainer(args, model, logger)
     logger.info(model)
     SailentGradsAPI = SailentGradsAPI(dataset, device, args, model_trainer, logger)
+
+    import pudb; pudb.set_trace()
     SailentGradsAPI.train()

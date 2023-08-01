@@ -5,7 +5,7 @@ import pickle
 import random
 import time
 
-import pdb
+import pudb
 import numpy as np
 import torch
 from collections import OrderedDict
@@ -85,10 +85,11 @@ class SailentGradsAPI(object):
 
     def train(self):
 
+        print(f"\n **************** RUNNING the training file **************** \n")
         params = self.model_trainer.get_trainable_params() #Model is same, so get parameters
 
-        #Generate sailency scores, and update masks
 
+        #Generate sailency scores, and update masks
         if self.args.snip_mask:
             temp = self.generate_global_mask_snip()
             mask_pers_local = [copy.deepcopy(temp) for i in range(self.args.client_num_in_total)]
@@ -101,6 +102,7 @@ class SailentGradsAPI(object):
             for name in mask_pers_local[clnt]:
                 w_per_mdls[clnt][name] = w_global[name] #* mask_pers_local[clnt][name]
         
+        pudb.set_trace()
 
         for round_idx in range(self.args.comm_round):
             self.logger.info("################Communication round : {}".format(round_idx))
@@ -117,7 +119,7 @@ class SailentGradsAPI(object):
             self.logger.info("client_indexes = " + str(client_indexes))
 
             for cur_clnt in client_indexes:
-                self.logger.info('@@@@@@@@@@@@@@@@ Training Client CM({}): {}'.format(round_idx, cur_clnt))
+                self.logger.info('@@@@@@@@@@@@@@@@ Training MODIFIED Client CM({}): {}'.format(round_idx, cur_clnt))
                 # update dataset
                 client = self.client_list[cur_clnt]
                 # update meta components in personal network
@@ -139,7 +141,6 @@ class SailentGradsAPI(object):
 
 
     #Sampling the client
-
     def _client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
             client_indexes = [client_index for client_index in range(client_num_in_total)]
