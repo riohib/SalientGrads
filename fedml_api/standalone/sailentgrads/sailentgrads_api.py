@@ -101,8 +101,6 @@ class SailentGradsAPI(object):
             w_per_mdls.append(copy.deepcopy(w_global))
             for name in mask_pers_local[clnt]:
                 w_per_mdls[clnt][name] = w_global[name] #* mask_pers_local[clnt][name]
-        
-        pudb.set_trace()
 
         for round_idx in range(self.args.comm_round):
             self.logger.info("################Communication round : {}".format(round_idx))
@@ -136,6 +134,8 @@ class SailentGradsAPI(object):
             #Just testing the sparsity
             mask_sps = self.get_model_sps_for_weight(w_global)
             self._test_on_all_clients(w_global, w_per_mdls, round_idx)
+
+        pudb.set_trace()
 
         self._test_on_all_clients(w_global, w_per_mdls, -1)
 
