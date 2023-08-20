@@ -5,11 +5,11 @@
 #SBATCH --mem=44g
 #SBATCH -p qTRDGPUH,qTRDGPUM
 #SBATCH --gres=gpu:V100:1
-#SBATCH -t 02-00
-#SBATCH -J 100iter70spssailentgrads10cifar
+#SBATCH -t 03-00
+#SBATCH -J CF10090itersubavg10cifar
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out
-#SBATCH -A trends53c17
+#SBATCH -A trends396s109
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bthapaliya1@student.gsu.edu
 #SBATCH --oversubscribe
@@ -37,16 +37,15 @@ source /data/users2/bthapaliya/anaconda-main/anaconda3/bin/activate
 
 # sleep 30s
 
-python main_sailentgrads.py --model 'resnet18' \
---dataset 'cifar10' \
+python main_subavg.py --model 'resnet18' \
+--dataset 'cifar100' \
 --partition_method 'dir' \
---partition_alpha 0.3 \
+--partition_alpha 0.2 \
 --batch_size 16 \
 --lr 0.1 \
 --lr_decay 0.998 \
 --epochs 5 \
---dense_ratio 0.3 \
---itersnip_iteration 100 \
+--dense_ratio 0.1 \
 --client_num_in_total 100 --frac 0.1 \
 --comm_round 500 \
 --seed 2022

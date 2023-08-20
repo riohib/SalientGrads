@@ -240,3 +240,9 @@ if __name__ == "__main__":
     logger.info(model)
     dispflAPI = dispflAPI(dataset, device, args, model_trainer, logger)
     dispflAPI.train()
+
+    # #Saving the model
+    # main_save_path = os.path.join('SAVED_MODELS/' + args.dataset)
+    # if not os.path.exists(main_save_path):
+    #     os.makedirs(main_save_path)
+    # torch.save(model.state_dict(), 'SAVED_MODELS/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)

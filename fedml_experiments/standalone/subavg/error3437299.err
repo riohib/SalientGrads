@@ -1,0 +1,12 @@
+/bin/bash: /data/users2/bthapaliya/anaconda-main/anaconda3/lib/libtinfo.so.6: no version information available (required by /bin/bash)
+arctrddgx002
+/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/subavg/subavg_api.py:134: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at  ../aten/src/ATen/native/IndexingUtils.h:27.)
+  w_server[name][ind]= avg[ind]
+Traceback (most recent call last):
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_experiments/standalone/subavg/main_subavg.py", line 222, in <module>
+    subfedavgAPI.train()
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/subavg/subavg_api.py", line 92, in train
+    self.record_information()
+  File "/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/fedml_api/standalone/subavg/subavg_api.py", line 220, in record_information
+    output = open(path, 'wb')
+FileNotFoundError: [Errno 2] No such file or directory: '../../results/cifar10/SubAVGdir0.3-mdlresnet18-batchsize16-cm500-total_clnt100-neighbor10-seed2022-dr0.05'
