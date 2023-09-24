@@ -40,7 +40,7 @@ def add_args(parser):
     parser.add_argument('--data_dir', type=str, default='/data/users2/bthapaliya/DistributedFLExperiments/DistributedFL/data/',
                         help='data directory, please feel free to change the directory to the right place')
 
-    parser.add_argument('--partition_method', type=str, default='dir', metavar='N',
+    parser.add_argument('--partition_method', type=str, default='weighted', metavar='N',
                         help="current supporting three types of data partition, one called 'dir' short for Dirichlet"
                              "one called 'n_cls' short for how many classes allocated for each client"
                              "and one called 'my_part' for partitioning all clients into PA shards with default latent Dir=0.3 distribution")
@@ -54,7 +54,7 @@ def add_args(parser):
     parser.add_argument('--partition_alpha', type=float, default=0.3, metavar='PA',
                         help='available parameters for data partition method')
 
-    parser.add_argument('--batch_size', type=int, default=128, metavar='N',
+    parser.add_argument('--batch_size', type=int, default=16, metavar='N',
                         help='local batch size for training')
 
     parser.add_argument('--client_optimizer', type=str, default='sgd',
@@ -71,7 +71,7 @@ def add_args(parser):
     parser.add_argument('--epochs', type=int, default=5, metavar='EP',
                         help='local training epochs for each client')
 
-    parser.add_argument('--client_num_in_total', type=int, default=15, metavar='NN',
+    parser.add_argument('--client_num_in_total', type=int, default=10, metavar='NN',
                         help='number of workers in a distributed cluster')
 
     parser.add_argument('--frac', type=float, default=0.5, metavar='NN',
@@ -80,7 +80,7 @@ def add_args(parser):
     parser.add_argument('--momentum', type=float, default=0, metavar='NN',
                         help='momentum')
 
-    parser.add_argument('--comm_round', type=int, default=10,
+    parser.add_argument('--comm_round', type=int, default=5,
                         help='total communication rounds')
 
     parser.add_argument('--frequency_of_the_test', type=int, default=1,
@@ -127,24 +127,24 @@ def load_data(args, dataset_name):
         args.data_dir += "cifar10"
         train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num = load_partition_data_cifar10(args.data_dir, args.partition_method,
+        class_num,probabilities = load_partition_data_cifar10(args.data_dir, args.partition_method,
                                 args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
     elif dataset_name == "cifar100":
         args.data_dir += "cifar100"
         train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num = load_partition_data_cifar100(args.data_dir, args.partition_method,
+        class_num,probabilities = load_partition_data_cifar100(args.data_dir, args.partition_method,
                                                 args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
     elif dataset_name == "tiny":
         args.data_dir += "tiny_imagenet"
         train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num = load_partition_data_tiny(args.data_dir, args.partition_method,
+        class_num,probabilities= load_partition_data_tiny(args.data_dir, args.partition_method,
                                              args.partition_alpha, args.client_num_in_total,
                                                  args.batch_size, logger)
 
     dataset = [train_data_num, test_data_num, train_data_global, test_data_global,
-               train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_num]
+               train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_num,probabilities]
     return dataset
 
 
@@ -257,7 +257,10 @@ if __name__ == "__main__":
     dataset = load_data(args, args.dataset)
 
     # create model.
-    model = create_model(args, model_name=args.model,class_num=len(dataset[-1][0]))
+    if args.dataset=="cifar10":
+        model = create_model(args, model_name=args.model,class_num=len(dataset[-2][0]))
+    else:
+        model = create_model(args, model_name=args.model,class_num=len(dataset[-1][0]))
     model_trainer = custom_model_trainer(args, model, logger)
     logger.info(model)
     SailentGradsAPI = SailentGradsAPI(dataset, device, args, model_trainer, logger)

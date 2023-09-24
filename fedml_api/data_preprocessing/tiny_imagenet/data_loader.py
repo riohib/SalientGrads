@@ -314,4 +314,4 @@ def load_partition_data_tiny( data_dir, partition_method, partition_alpha, clien
 
 
     return None, None, None, None, \
-           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts,[]

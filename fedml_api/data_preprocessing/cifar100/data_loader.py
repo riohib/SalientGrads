@@ -163,10 +163,13 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
         cls_priors = np.zeros(shape=(n_client, n_cls))
 
         # default partition method with Dirichlet=0.3
-        cls_priors_tmp = np.random.dirichlet(alpha=[0.3] * n_cls, size = int(n_shards))
+        #cls_priors_tmp = np.random.dirichlet(alpha#=[0.3] * n_cls, size = int(n_shards))
+        cls_priors_tmp = np.random.dirichlet(alpha=[0.3] * n_cls, size = int(n_shards * n_client))
 
+        # for i in range(n_client):
+        #     cls_priors[i] = cls_priors_tmp[int(i / n_shards)]
         for i in range(n_client):
-            cls_priors[i] = cls_priors_tmp[int(i / n_shards)]
+            cls_priors[i] = cls_priors_tmp[int(i / int(n_client / n_shards))]
 
         prior_cumsum = np.cumsum(cls_priors, axis=1)
 
@@ -254,4 +257,4 @@ def load_partition_data_cifar100( data_dir, partition_method, partition_alpha, c
         test_data_local_dict[client_idx] = test_data_local
     record_part(y_test, traindata_cls_counts, test_dataidxs, logger)
     return None, None, None, None, \
-           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts,[]
