@@ -119,6 +119,7 @@ def add_args(parser):
 
     #For SailentGrads
     parser.add_argument("--snip_mask", default=True, action='store_true')
+    parser.add_argument("--exp_name", type=str, default="test_exp1")
     return parser
 
 
@@ -231,14 +232,19 @@ if __name__ == "__main__":
     # logger = logger_config(log_path=log_path, logging_name=args.identity)
 
 
-    cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
-    log_path = os.path.join(cur_dir, 'LOG/' + args.dataset + '/' + args.identity + '.log')
-    main_log_path = os.path.join('LOG/' + args.dataset)
-    if not os.path.exists(main_log_path):
-        os.makedirs(main_log_path)
-    logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)
+    # cur_dir = os.path.abspath(__file__).rsplit("/", 1)[0]
+    # log_path = os.path.join(cur_dir, 'LOG/' + args.dataset + '/' + args.identity + '.log')
+    # main_log_path = os.path.join('LOG/' + args.dataset)
+    # if not os.path.exists(main_log_path):
+    #     os.makedirs(main_log_path)
+    # logger = logger_config(log_path='LOG/' + args.dataset + '/' + args.identity + '.log', logging_name=args.identity)
 
 
+    log_path = os.path.join(os.getcwd(), 'logs', args.exp_name)
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    logger = logger_config(log_path=os.path.join(log_path, args.exp_name + '.log') , logging_name=args.exp_name)
 
 
     logger.info(args)
@@ -253,6 +259,7 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(args.seed)
     torch.backends.cudnn.deterministic = True
 
+    
     # load data
     dataset = load_data(args, args.dataset)
 

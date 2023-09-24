@@ -9,7 +9,7 @@
 #SBATCH -J CF10070itersailentgrads10cifar
 #SBATCH -e error%A.err
 #SBATCH -o out%A.out
-#SBATCH -A trends53c17
+#SBATCH -A psy53c17
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=bthapaliya1@student.gsu.edu
 #SBATCH --oversubscribe

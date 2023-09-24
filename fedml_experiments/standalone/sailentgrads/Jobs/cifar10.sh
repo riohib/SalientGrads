@@ -7,7 +7,7 @@ python main_sailentgrads.py --model 'resnet18' \
 --lr 0.1 \
 --lr_decay 0.998 \
 --epochs 5 \
---dense_ratio 0.5 \
+--dense_ratio 0.2 \
 --client_num_in_total 100 --frac 0.1 \
 --comm_round 500 \
 --seed 2022
