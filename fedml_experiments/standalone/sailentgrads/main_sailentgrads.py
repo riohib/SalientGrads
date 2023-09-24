@@ -125,21 +125,42 @@ def add_args(parser):
 def load_data(args, dataset_name):
     if dataset_name == "cifar10":
         args.data_dir += "cifar10"
-        train_data_num, test_data_num, train_data_global, test_data_global, \
+
+        if args.partition_method=="weighted":
+                train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
         class_num,probabilities = load_partition_data_cifar10(args.data_dir, args.partition_method,
                                 args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
+        else:
+                    train_data_num, test_data_num, train_data_global, test_data_global, \
+        train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
+        class_num = load_partition_data_cifar10(args.data_dir, args.partition_method,
+                                args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
     elif dataset_name == "cifar100":
         args.data_dir += "cifar100"
-        train_data_num, test_data_num, train_data_global, test_data_global, \
+        if args.partition_method=="weighted":
+            train_data_num, test_data_num, train_data_global, test_data_global, \
+            train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
+            class_num,probabilities = load_partition_data_cifar100(args.data_dir, args.partition_method,
+                                                    args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
+        else:
+                    train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num,probabilities = load_partition_data_cifar100(args.data_dir, args.partition_method,
+        class_num = load_partition_data_cifar100(args.data_dir, args.partition_method,
                                                 args.partition_alpha, args.client_num_in_total, args.batch_size, logger)
+ 
     elif dataset_name == "tiny":
         args.data_dir += "tiny_imagenet"
-        train_data_num, test_data_num, train_data_global, test_data_global, \
+        if args.partition_method=="weighted":
+            train_data_num, test_data_num, train_data_global, test_data_global, \
+            train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
+            class_num,probabilities= load_partition_data_tiny(args.data_dir, args.partition_method,
+                                                args.partition_alpha, args.client_num_in_total,
+                                                    args.batch_size, logger)
+        else:
+                     train_data_num, test_data_num, train_data_global, test_data_global, \
         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, \
-        class_num,probabilities= load_partition_data_tiny(args.data_dir, args.partition_method,
+        class_num= load_partition_data_tiny(args.data_dir, args.partition_method,
                                              args.partition_alpha, args.client_num_in_total,
                                                  args.batch_size, logger)
 

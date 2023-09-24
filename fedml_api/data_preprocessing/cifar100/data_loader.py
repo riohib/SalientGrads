@@ -256,5 +256,12 @@ def load_partition_data_cifar100( data_dir, partition_method, partition_alpha, c
         train_data_local_dict[client_idx] = train_data_local
         test_data_local_dict[client_idx] = test_data_local
     record_part(y_test, traindata_cls_counts, test_dataidxs, logger)
-    return None, None, None, None, \
-           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts,[]
+    # return None, None, None, None, \
+    #        data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts,[]
+
+    if partition_method=="weighted":
+           return None, None, None, None, \
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts, []
+    else:
+           return None, None, None, None, \
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts
