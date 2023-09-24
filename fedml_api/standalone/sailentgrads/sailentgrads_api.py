@@ -13,7 +13,7 @@ from collections import OrderedDict
 from fedml_api.standalone.sailentgrads.client import Client
 from fedml_api.standalone.DisPFL.slim_util import model_difference
 from fedml_api.standalone.DisPFL.slim_util import hamming_distance
-from fedml_api.standalone.sailentgrads.snip import get_mask_from_grads, get_mean_snip_scores, get_snip_scores
+from fedml_api.standalone.sailentgrads.snip import get_mask_from_grads, get_mean_snip_scores, get_snip_scores, get_weighted_mean_snip_scores
 
 class SailentGradsAPI(object):
     def __init__(self, dataset, device, args, model_trainer, logger):
@@ -21,7 +21,7 @@ class SailentGradsAPI(object):
         self.device = device
         self.args = args
         [train_data_num, test_data_num, train_data_global, test_data_global,
-         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_counts] = dataset
+         train_data_local_num_dict, train_data_local_dict, test_data_local_dict, class_counts,probabilities] = dataset
         self.train_global = train_data_global
         self.test_global = test_data_global
         self.val_global = None
@@ -33,6 +33,7 @@ class SailentGradsAPI(object):
         self.test_data_local_dict = test_data_local_dict
         self.class_counts = class_counts
         self.model_trainer = model_trainer
+        self.probabilities = probabilities
         self._setup_clients(train_data_local_num_dict, train_data_local_dict, test_data_local_dict, model_trainer)
         self.init_stat_info()
 
@@ -58,7 +59,12 @@ class SailentGradsAPI(object):
 
         self.logger.info("@@@@@Aggregate the local masks@@@@@@@@@@@@@@@@@@@")
         #Aggregate the masks
-        averaged_scores = get_mean_snip_scores(all_client_snip_scores)
+        #averaged_scores = get_mean_snip_scores(all_client_snip_scores)
+        if self.args.partition_method=="weighted":
+            averaged_scores = get_weighted_mean_snip_scores(all_client_snip_scores, self.probabilities)
+        else:
+            averaged_scores = get_mean_snip_scores(all_client_snip_scores)
+
         params = self.model_trainer.get_trainable_params()
         
         #Generate the final mask

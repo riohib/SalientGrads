@@ -131,6 +131,29 @@ def get_mean_snip_scores(grads_gathered):
 
         return grad_abs_average
 
+def get_weighted_mean_snip_scores(grads_gathered, probabilities):
+    size = len(grads_gathered)
+    grad_abs_average = {}
+
+    # Loop through each dictionary in the list
+    for i, grad_abs in enumerate(grads_gathered):
+        weight = probabilities[i]  # Get the weight for the current client
+        # Loop through each key-value pair in the dictionary
+        for k, v in dict(grad_abs).items():
+            # If the key already exists in the averaged dictionary, add the weighted value to the existing sum
+            if k in grad_abs_average:
+                grad_abs_average[k] += weight * v
+            # Otherwise, create a new key in the averaged dictionary and initialize it with the weighted value
+            else:
+                grad_abs_average[k] = weight * v.clone().detach()
+
+    # Normalize the summed values by dividing by the sum of the weights
+    total_weight = sum(probabilities)
+    for k in grad_abs_average.keys():
+        grad_abs_average[k] /= total_weight
+
+    return grad_abs_average
+
 #In case of IterSNIP, a function to get the mean saliency scores
 def get_mean_sailency_scores(final_sailency_list):
         #model = self.model

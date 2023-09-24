@@ -76,6 +76,7 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
     logger.info("*********partition data***************")
     X_train, y_train, X_test, y_test = load_cifar10_data(datadir)
     n_train = X_train.shape[0]
+    probabilities=[]
 
     if partition == 'n_cls':
         n_client = n_nets
@@ -114,6 +115,24 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
                 net_dataidx_map[curr_clnt].append(idx_list[cls_label][cls_amount[cls_label]])
 
                 break
+
+    elif partition == 'weighted':
+        n_client = n_nets
+
+        # Step 1: Generate random values for each client
+        random_values = np.random.random(n_client)
+
+        # Step 2: Normalize the values to sum to 1
+        probabilities = random_values / random_values.sum()
+
+        # Initialize a dictionary to store data indices for each client
+        net_dataidx_map = {i: [] for i in range(n_client)}
+
+        # Assign data points to clients based on the probabilities
+        for i in range(n_train):
+            client_idx = np.random.choice(n_client, p=probabilities)
+            net_dataidx_map[client_idx].append(i)
+
 
     elif partition == 'dir':
         n_client = n_nets
@@ -191,7 +210,7 @@ def partition_data( datadir, partition, n_nets, alpha, logger):
                 break
 
     traindata_cls_counts = record_net_data_stats(y_train, net_dataidx_map)
-    return X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts
+    return X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts,probabilities
 
 
 def get_dataloader_cifar10(datadir, train_bs, test_bs, dataidxs=None,test_idxs=None, cache_train_data_set=None,cache_test_data_set=None,logger=None):
@@ -206,7 +225,7 @@ def get_dataloader_cifar10(datadir, train_bs, test_bs, dataidxs=None,test_idxs=N
     return train_dl, test_dl
 
 def load_partition_data_cifar10( data_dir, partition_method, partition_alpha, client_number, batch_size, logger):
-    X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts = partition_data(
+    X_train, y_train, X_test, y_test, net_dataidx_map, traindata_cls_counts, probabilities = partition_data(
                                                                                              data_dir,
                                                                                              partition_method,
                                                                                              client_number,
@@ -245,5 +264,9 @@ def load_partition_data_cifar10( data_dir, partition_method, partition_alpha, cl
 
     record_part(y_test, traindata_cls_counts, test_dataidxs, logger)
 
-    return None, None, None, None, \
+    if partition_method=="weighted":
+           return None, None, None, None, \
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts, probabilities
+    else:
+           return None, None, None, None, \
            data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts

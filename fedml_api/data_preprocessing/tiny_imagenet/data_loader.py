@@ -313,5 +313,12 @@ def load_partition_data_tiny( data_dir, partition_method, partition_alpha, clien
     record_part(y_test, traindata_cls_counts, test_dataidxs, logger)
 
 
-    return None, None, None, None, \
+    # return None, None, None, None, \
+    #        data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts,[]
+
+    if partition_method=="weighted":
+           return None, None, None, None, \
+           data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts, []
+    else:
+           return None, None, None, None, \
            data_local_num_dict, train_data_local_dict, test_data_local_dict, traindata_cls_counts
